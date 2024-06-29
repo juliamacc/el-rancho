@@ -1,5 +1,6 @@
 # imports do Python
 from random import randint
+from restaurant.shared import crew_condition
 
 """
     Não troque o nome das variáveis compartilhadas, a assinatura e o nomes das funções.
@@ -7,7 +8,7 @@ from random import randint
 class Totem:
 
     def __init__(self, number_of_clients):
-        super().__init__()
+        #super().__init__()
         self.already_sampled = list()
         self.maximum_ticket_number = number_of_clients * 5
         self.call = list()
@@ -37,4 +38,5 @@ class Totem:
     """ Insira sua sincronização."""
     def call_crew(self):
         print("[CALLING] - O totem chamou a equipe para atender o pedido da senha {}.".format(self.already_sampled[-1]))
-
+        with crew_condition:
+            crew_condition.notify()

@@ -1,5 +1,6 @@
 # imports do Python
 from threading import Thread
+from restaurant.shared import tickets, orders, ticket_lock, chef_condition, crew_condition
 
 
 """
@@ -15,17 +16,28 @@ class Crew(Thread):
 
     """ O membro da equipe espera um cliente. """    
     def wait(self):
-        print("O membro da equipe {} está esperando um cliente.".format(self._id))
+        with crew_condition:
+            while tickets.empty():
+                print(f"O membro da equipe {self._id} está esperando um cliente.")
+                crew_condition.wait()
 
     """ O membro da equipe chama o cliente da senha ticket."""
     def call_client(self, ticket):
-        print("[CALLING] - O membro da equipe {} está chamando o cliente da senha {}.".format(self._id, ticket))
+        print(f"[CALLING] - O membro da equipe {self._id} está chamando o cliente da senha {ticket}.")
 
     def make_order(self, order):
-        print("[STORING] - O membro da equipe {} está anotando o pedido {} para o chef.".format(self._id, order))
+        print(f"[STORING] - O membro da equipe {self._id} está anotando o pedido {order} para o chef.")
+        with chef_condition:
+            orders.put(order)
+            chef_condition.notify()
 
     """ Thread do membro da equipe."""
     def run(self):
-        self.wait()
-        self.call_client(0)
-        self.make_order(0)
+        while True:
+            self.wait()
+            with ticket_lock:
+                if tickets.empty():
+                    break
+                ticket = tickets.get()
+            self.call_client(ticket)
+            self.make_order(ticket)
